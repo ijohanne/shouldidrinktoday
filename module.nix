@@ -20,6 +20,12 @@ in
       default = true;
       description = "Whether to enable ACME/Let's Encrypt and force SSL.";
     };
+
+    extraDomains = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Additional domains that redirect to the main domain, served on the same virtual host.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -29,7 +35,17 @@ in
         forceSSL = cfg.acme;
         enableACME = cfg.acme;
         root = "${shouldidrinktoday-html}";
+        serverAliases = cfg.extraDomains;
+        extraConfig = lib.mkIf (cfg.extraDomains != [ ]) ''
+          if ($host != "${cfg.domain}") {
+            return 301 $scheme://${cfg.domain}$request_uri;
+          }
+        '';
       };
+    };
+
+    security.acme.certs = lib.mkIf (cfg.acme && cfg.extraDomains != [ ]) {
+      ${cfg.domain}.extraDomainNames = cfg.extraDomains;
     };
   };
 }
