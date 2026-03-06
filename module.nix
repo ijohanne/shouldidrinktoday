@@ -14,14 +14,20 @@ in
       default = "shouldidrink.today";
       description = "Domain name for the virtual host.";
     };
+
+    acme = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Whether to enable ACME/Let's Encrypt and force SSL.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
     services.nginx = {
       enable = true;
       virtualHosts.${cfg.domain} = {
-        forceSSL = true;
-        enableACME = true;
+        forceSSL = cfg.acme;
+        enableACME = cfg.acme;
         root = "${shouldidrinktoday-html}";
       };
     };
